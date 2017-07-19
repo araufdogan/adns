@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"log"
 	"time"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func init() {
@@ -19,12 +21,16 @@ func main() {
 
 	// todo start logger
 
-	// todo check mysql server
+	db, err := sql.Open("mysql", config.MysqlConnectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	server := &Server{
 		host:     config.DnsBind,
 		rTimeout: 5 * time.Second,
 		wTimeout: 5 * time.Second,
+		db: db,
 	}
 
 	server.Run()

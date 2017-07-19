@@ -3,16 +3,17 @@ package main
 import (
 	"github.com/miekg/dns"
 	"log"
+	"database/sql"
 )
 
 // DNSHandler
 type DNSHandler struct {
+	db *sql.DB
 }
 
 // NewHandler returns a new DNSHandler
-func NewHandler() *DNSHandler {
-
-	return &DNSHandler{}
+func NewHandler(db *sql.DB) *DNSHandler {
+	return &DNSHandler{db: db}
 }
 
 // DoTCP starts a tcp query

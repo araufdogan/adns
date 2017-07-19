@@ -4,19 +4,21 @@ import (
 	"time"
 	"log"
 	"github.com/miekg/dns"
+	"database/sql"
 )
 
 
 // Server
 type Server struct {
-	host     string
-	rTimeout time.Duration
-	wTimeout time.Duration
+	host		string
+	rTimeout	time.Duration
+	wTimeout	time.Duration
+	db		*sql.DB
 }
 
 // Run starts the server
 func (s *Server) Run() {
-	Handler := NewHandler()
+	Handler := NewHandler(s.db)
 
 	tcpHandler := dns.NewServeMux()
 	tcpHandler.HandleFunc(".", Handler.DoTCP)
