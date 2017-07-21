@@ -140,7 +140,7 @@ func (h *DNSHandler) do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 			m.SetReply(req)
 
 			rr_header := dns.RR_Header{ Name: q.Name, Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: soa.Ttl }
-			s := &dns.SOA{ Hdr: rr_header, Ns: ns1.Name, Mbox: soa.Mbox, Serial: soa.Serial, Refresh: soa.Refresh, Retry: soa.Retry, Expire: soa.Expire, Minttl: soa.Minimum}
+			s := &dns.SOA{ Hdr: rr_header, Ns: ns1.Name + ".", Mbox: soa.Mbox + ".", Serial: soa.Serial, Refresh: soa.Refresh, Retry: soa.Retry, Expire: soa.Expire, Minttl: soa.Minimum}
 
 			m.Answer = append(m.Answer, s)
 
