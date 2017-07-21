@@ -15,17 +15,24 @@ func init() {
 }
 
 func main() {
+	// Load config file
 	if err := loadConfig("adns.toml"); err != nil {
 		log.Fatal(err)
 	}
 
-	// todo start logger
-
+	// Create an sql.DB and check for errors
 	db, err := sql.Open("mysql", config.MysqlConnectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Test the connection to the database
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Start dns server
 	server := &Server{
 		host:     config.DnsBind,
 		rTimeout: 5 * time.Second,
