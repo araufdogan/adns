@@ -93,13 +93,13 @@ func (h *DNSHandler) do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 		}
 
 		// find sld + tld record in soa
-		err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + domain_name.TLD)
+		err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + "." + domain_name.TLD)
 		if err != nil || soa.Active == 0 {
 			return
 		}
 
 		// find a record in rr
-		err, rr_array := DBGetRrByZoneName(h.db, "A", soa.Id, domain_name.SLD)
+		err, rr_array := DBGetRrByZoneName(h.db, "A", soa.Id, domain_name.TRD)
 		if err != nil || len(rr_array) == 0 {
 			return
 		}

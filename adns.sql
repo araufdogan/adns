@@ -31,15 +31,15 @@ CREATE TABLE IF NOT EXISTS `ns` (
 CREATE TABLE IF NOT EXISTS `rr` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `zone` int(11) unsigned NOT NULL,
-  `name` char(200) NOT NULL,
-  `data` varbinary(128) NOT NULL,
+  `name` char(200) NOT NULL DEFAULT '',
+  `data` char(50) NOT NULL,
   `aux` int(10) unsigned NOT NULL,
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
   `type` enum('A','AAAA','CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT') DEFAULT NULL,
-  `active` bit(1) NOT NULL DEFAULT b'1',
+  `active` int(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `rr` (`zone`,`name`,`type`,`data`,`aux`,`active`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 
 -- Veri çıktısı seçilmemişti
 -- tablo yapısı dökülüyor adns.soa
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `soa` (
   `expire` int(10) unsigned NOT NULL DEFAULT '604800',
   `minimum` int(10) unsigned NOT NULL DEFAULT '86400',
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
-  `active` bit(1) NOT NULL DEFAULT b'1',
+  `active` int(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 

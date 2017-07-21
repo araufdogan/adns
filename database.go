@@ -60,9 +60,9 @@ func DBGetSoaByOrigin(db *sql.DB, origin string) (error, Soa) {
 	return nil, soa
 }
 
-func DBGetRrByZoneName(db *sql.DB, group string ,  zone uint32, name string) (error, []Rr) {
+func DBGetRrByZoneName(db *sql.DB, group string, zone uint32, name string) (error, []Rr) {
 	var rr_array []Rr
-	rows, err := db.Query("SELECT * FROM rr WHERE type = ? AND zone = ? AND name = ?", group, zone, name)
+	rows, err := db.Query("SELECT * FROM rr WHERE `type` = ? AND zone = ? AND name = ?", group, zone, name)
 	if err != nil {
 		return errors.New("no row found"), rr_array
 	}
@@ -86,6 +86,8 @@ func DBGetRrByZoneName(db *sql.DB, group string ,  zone uint32, name string) (er
 
 		rr_array = append(rr_array, rr)
 	}
+	
+	rows.Close()
 
 	return nil, rr_array
 }
