@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `rr` (
   `aux` int(10) unsigned NOT NULL,
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
   `type` enum('A','AAAA','CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT') DEFAULT NULL,
-  `active` enum('Y','N') NOT NULL DEFAULT 'Y',
+  `active` bit(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `rr` (`zone`,`name`,`type`,`data`,`aux`,`active`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `soa` (
   `expire` int(10) unsigned NOT NULL DEFAULT '604800',
   `minimum` int(10) unsigned NOT NULL DEFAULT '86400',
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
-  `active` enum('Y','N') NOT NULL DEFAULT 'Y',
+  `active` bit(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 

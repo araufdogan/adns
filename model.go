@@ -21,5 +21,16 @@ type Soa struct {
 	Expire		uint32
 	Minimum		uint32
 	Ttl		uint32
-	Active		string
+	Active		int
+}
+
+type Rr struct {
+	Id		uint32
+	Zone		uint32
+	Name		string
+	Data		string
+	Aux		uint32
+	Ttl		uint32
+	Type		string
+	Active		int
 }

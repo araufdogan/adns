@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"strings"
 	"net"
+	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
 
 // Question type
@@ -67,15 +68,8 @@ func (h *DNSHandler) do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 
 	if q.Qtype == dns.TypeA {
 		// if name is ns
-		var ns Ns
-		err := h.db.QueryRow("SELECT * FROM ns WHERE name = ? LIMIT 1", Q.Qname).Scan(
-			&ns.Id,
-			&ns.Name,
-			&ns.DataV4,
-			&ns.DataV6,
-			&ns.Ttl)
-
-		if err == nil && ns.Id > 0 {
+		err, ns := DBGetNsByName(h.db, Q.Qname)
+		if err == nil {
 			// build the reply
 			m := new(dns.Msg)
 			m.SetReply(req)
@@ -90,63 +84,70 @@ func (h *DNSHandler) do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 			return
 		}
 
-		// todo if name is record
+		// if name is record
+		// parse publicsuffix
 
-	} else if q.Qtype == dns.TypeSOA {
-		// get soa record
-		var soa Soa
-		err := h.db.QueryRow("SELECT * FROM soa WHERE origin = ? LIMIT 1", Q.Qname).Scan(
-			&soa.Id,
-			&soa.UserId,
-			&soa.Origin,
-			&soa.Ns1,
-			&soa.Ns2,
-			&soa.Mbox,
-			&soa.Serial,
-			&soa.Refresh,
-			&soa.Retry,
-			&soa.Expire,
-			&soa.Minimum,
-			&soa.Ttl,
-			&soa.Active,
-		)
-
-		if err == nil && soa.Id > 0 {
-			// get ns records
-			var ns1 Ns
-			err := h.db.QueryRow("SELECT * FROM ns WHERE id = ?", soa.Ns1).Scan(
-				&ns1.Id,
-				&ns1.Name,
-				&ns1.DataV4,
-				&ns1.DataV6,
-				&ns1.Ttl)
-			if err != nil || ns1.Id == 0 {
-				return
-			}
-
-			var ns2 Ns
-			err = h.db.QueryRow("SELECT * FROM ns WHERE id = ?", soa.Ns2).Scan(
-				&ns2.Id,
-				&ns2.Name,
-				&ns2.DataV4,
-				&ns2.DataV6,
-				&ns2.Ttl)
-			if err != nil || ns2.Id == 0 {
-				return
-			}
-
-			// build the reply
-			m:= new(dns.Msg)
-			m.SetReply(req)
-
-			rr_header := dns.RR_Header{ Name: q.Name, Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: soa.Ttl }
-			s := &dns.SOA{ Hdr: rr_header, Ns: ns1.Name + ".", Mbox: soa.Mbox + ".", Serial: soa.Serial, Refresh: soa.Refresh, Retry: soa.Retry, Expire: soa.Expire, Minttl: soa.Minimum}
-
-			m.Answer = append(m.Answer, s)
-
-			// write the reply
-			w.WriteMsg(m)
+		domain_name, err := publicsuffix.Parse(Q.Qname)
+		if err != nil {
 			return
 		}
+
+		// find sld + tld record in soa
+		err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + domain_name.TLD)
+		if err != nil || soa.Active == 0 {
+			return
+		}
+
+		// find a record in rr
+		err, rr_array := DBGetRrByZoneName(h.db, "A", soa.Id, domain_name.SLD)
+		if err != nil || len(rr_array) == 0 {
+			return
+		}
+
+		// build the reply
+		m := new(dns.Msg)
+		m.SetReply(req)
+
+		for _, rr := range rr_array {
+			rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: rr.Ttl}
+			a := &dns.A{Hdr: rr_header, A: net.ParseIP(rr.Data)}
+
+			m.Answer = append(m.Answer, a)
+		}
+
+		// write the reply
+		w.WriteMsg(m)
+		return
+	} else if q.Qtype == dns.TypeSOA {
+		// get soa record
+		err, soa := DBGetSoaByOrigin(h.db, Q.Qname)
+		if err != nil || soa.Active == 0 {
+			return
+		}
+
+		err, ns1 := DBGetNsById(h.db, soa.Ns1)
+		if err != nil {
+			return
+		}
+
+		/*
+		err, ns2 := DBGetNsById(h.db, soa.Ns2)
+		if err != nil {
+			return
+		}
+		*/
+
+		// build the reply
+		m := new(dns.Msg)
+		m.SetReply(req)
+
+		rr_header := dns.RR_Header{ Name: q.Name, Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: soa.Ttl }
+		s := &dns.SOA{ Hdr: rr_header, Ns: ns1.Name + ".", Mbox: soa.Mbox + ".", Serial: soa.Serial, Refresh: soa.Refresh, Retry: soa.Retry, Expire: soa.Expire, Minttl: soa.Minimum}
+
+		m.Answer = append(m.Answer, s)
+
+		// write the reply
+		w.WriteMsg(m)
+		return
 	}
 }
