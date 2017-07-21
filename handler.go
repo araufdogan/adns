@@ -79,6 +79,8 @@ func (h *DNSHandler) Do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 	case dns.TypeSOA:
 		HandleSoa(h, Q, q, w, req)
 		break
+	case dns.TypeCNAME:
+		HandleCname(h, Q, q, w, req)
 	default:
 		break
 	}
@@ -255,6 +257,42 @@ func HandleSoa(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 	s := &dns.SOA{ Hdr: rr_header, Ns: ns1.Name + ".", Mbox: soa.Mbox + ".", Serial: soa.Serial, Refresh: soa.Refresh, Retry: soa.Retry, Expire: soa.Expire, Minttl: soa.Minimum}
 
 	m.Answer = append(m.Answer, s)
+
+	// write the reply
+	w.WriteMsg(m)
+	return
+}
+
+func HandleCname(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, req *dns.Msg) {
+	// parse publicsuffix
+
+	domain_name, err := publicsuffix.Parse(Q.Qname)
+	if err != nil {
+		return
+	}
+
+	// find sld + tld record in soa
+	err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + "." + domain_name.TLD)
+	if err != nil || soa.Active == 0 {
+		return
+	}
+
+	// find cname record in rr
+	err, rr_array := DBGetRrByZoneName(h.db, "CNAME", soa.Id, domain_name.TRD)
+	if err != nil || len(rr_array) == 0 {
+		return
+	}
+
+	// build the reply
+	m := new(dns.Msg)
+	m.SetReply(req)
+
+	for _, rr := range rr_array {
+		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeCNAME, Class: dns.ClassINET, Ttl: rr.Ttl}
+		a := &dns.CNAME{Hdr: rr_header, Target: rr.Data}
+
+		m.Answer = append(m.Answer, a)
+	}
 
 	// write the reply
 	w.WriteMsg(m)
