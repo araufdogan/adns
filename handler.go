@@ -89,6 +89,9 @@ func (h *DNSHandler) Do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 	case dns.TypeSRV:
 		HandleSrv(h, Q, q, w, req)
 		break
+	case dns.TypeTXT:
+		HandleTxt(h, Q, q, w, req)
+		break
 	default:
 		break
 	}
@@ -367,7 +370,7 @@ func HandleSrv(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 		return
 	}
 
-	// find soa record in rr
+	// find srv record in rr
 	err, rr_array := DBGetRrByZoneName(h.db, "SRV", soa.Id, domain_name.TRD)
 	if err != nil || len(rr_array) == 0 {
 		return
@@ -400,7 +403,43 @@ func HandleSrv(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 		}
 
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeSRV, Class: dns.ClassINET, Ttl: rr.Ttl}
-		srv := &dns.SRV{Hdr: rr_header, Priority: priority, Weight: weight, Port: port, Target: split_data[4] + "."}
+		srv := &dns.SRV{Hdr: rr_header, Priority: uint16(priority), Weight: uint16(weight), Port: uint16(port), Target: split_data[4] + "."}
+
+		m.Answer = append(m.Answer, srv)
+	}
+
+	// write the reply
+	w.WriteMsg(m)
+	return
+}
+
+func HandleTxt(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, req *dns.Msg) {
+	// parse publicsuffix
+
+	domain_name, err := publicsuffix.Parse(Q.Qname)
+	if err != nil {
+		return
+	}
+
+	// find sld + tld record in soa
+	err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + "." + domain_name.TLD)
+	if err != nil || soa.Active == 0 {
+		return
+	}
+
+	// find txt record in rr
+	err, rr_array := DBGetRrByZoneName(h.db, "TXT", soa.Id, domain_name.TRD)
+	if err != nil || len(rr_array) == 0 {
+		return
+	}
+
+	// build the reply
+	m := new(dns.Msg)
+	m.SetReply(req)
+
+	for _, rr := range rr_array {
+		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeSRV, Class: dns.ClassINET, Ttl: rr.Ttl}
+		srv := &dns.TXT{Hdr: rr_header, Txt: []string{rr.Data}}
 
 		m.Answer = append(m.Answer, srv)
 	}
