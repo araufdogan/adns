@@ -297,7 +297,7 @@ func HandleCname(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter
 
 	for _, rr := range rr_array {
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeCNAME, Class: dns.ClassINET, Ttl: rr.Ttl}
-		cname := &dns.CNAME{Hdr: rr_header, Target: rr.Data}
+		cname := &dns.CNAME{Hdr: rr_header, Target: rr.Data + "."}
 
 		m.Answer = append(m.Answer, cname)
 	}
