@@ -85,17 +85,3 @@ func (c *MemoryCache) Start() {
 		}
 	}()
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
