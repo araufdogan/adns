@@ -32,12 +32,18 @@ func (q *Question) String() string {
 
 // DNSHandler
 type DNSHandler struct {
-	db *sql.DB
+	db		*sql.DB
+	cache		Cache
 }
 
 // NewHandler returns a new DNSHandler
 func NewHandler(db *sql.DB) *DNSHandler {
-	return &DNSHandler{db: db}
+	cache := &MemoryCache{
+		Storage:  make(map[string]Message, 9999),
+		MaxCount: 9999,
+	}
+
+	return &DNSHandler{db: db, cache: cache}
 }
 
 // DoTCP starts a tcp query
@@ -64,6 +70,13 @@ func (h *DNSHandler) Do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 
 	// exit if query is not inet
 	if q.Qclass != dns.ClassINET {
+		return
+	}
+
+	//cache response
+	err, m := h.cache.Get(q)
+	if err == nil {
+		w.WriteMsg(m)
 		return
 	}
 
@@ -115,6 +128,8 @@ func HandleA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, re
 
 		// write the reply
 		w.WriteMsg(m)
+
+		h.cache.AddOrUpdate(q, m)
 		return
 	}
 
@@ -151,6 +166,8 @@ func HandleA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, re
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -169,6 +186,8 @@ func HandleAAAA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter,
 
 		// write the reply
 		w.WriteMsg(m)
+
+		h.cache.AddOrUpdate(q, m)
 		return
 	}
 
@@ -205,6 +224,8 @@ func HandleAAAA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter,
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -241,6 +262,8 @@ func HandleNs(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, r
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -274,6 +297,8 @@ func HandleSoa(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -310,6 +335,8 @@ func HandleCname(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -356,6 +383,8 @@ func HandleMx(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, r
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -413,6 +442,8 @@ func HandleSrv(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
 
@@ -485,5 +516,7 @@ func HandleSpf(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 
 	// write the reply
 	w.WriteMsg(m)
+
+	h.cache.AddOrUpdate(q, m)
 	return
 }
