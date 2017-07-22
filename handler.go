@@ -367,25 +367,45 @@ func HandleSrv(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 		return
 	}
 
-	// find mx record in rr
+	// find soa record in rr
 	err, rr_array := DBGetRrByZoneName(h.db, "SRV", soa.Id, domain_name.TRD)
 	if err != nil || len(rr_array) == 0 {
 		return
 	}
-	/*
+
 	// build the reply
 	m := new(dns.Msg)
 	m.SetReply(req)
 
 	for _, rr := range rr_array {
+		//SRV 1 2 3 target.com.
+		split_data := strings.Split(rr.Data, " ")
+		if len(split_data) != 5 {
+			continue
+		}
+
+		priority, err := strconv.ParseInt(split_data[1], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		weight, err := strconv.ParseInt(split_data[2], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		port, err := strconv.ParseInt(split_data[3], 10, 64)
+		if err != nil {
+			continue
+		}
+
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeSRV, Class: dns.ClassINET, Ttl: rr.Ttl}
-		srv := &dns.SRV{Hdr: rr_header, Targ}
+		srv := &dns.SRV{Hdr: rr_header, Priority: priority, Weight: weight, Port: port, Target: split_data[4] + "."}
 
 		m.Answer = append(m.Answer, srv)
 	}
 
 	// write the reply
 	w.WriteMsg(m)
-	*/
 	return
 }
