@@ -19,11 +19,12 @@ USE `adns`;
 -- tablo yapısı dökülüyor adns.ns
 CREATE TABLE IF NOT EXISTS `ns` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `data_v4` varchar(15) NOT NULL,
-  `data_v6` varchar(39) NOT NULL DEFAULT '',
+  `name` char(255) NOT NULL,
+  `data_v4` char(15) NOT NULL,
+  `data_v6` char(39) NOT NULL DEFAULT '',
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 -- Veri çıktısı seçilmemişti
@@ -31,15 +32,17 @@ CREATE TABLE IF NOT EXISTS `ns` (
 CREATE TABLE IF NOT EXISTS `rr` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `zone` int(11) unsigned NOT NULL,
-  `name` char(200) NOT NULL DEFAULT '',
-  `data` char(50) NOT NULL,
+  `name` char(255) NOT NULL DEFAULT '',
+  `data` char(255) NOT NULL,
   `aux` int(10) unsigned NOT NULL,
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
-  `type` enum('A','AAAA','CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT') DEFAULT NULL,
-  `active` int(1) NOT NULL DEFAULT '1',
+  `type` enum('A','AAAA','CNAME','MX','NS','SRV','TXT','SPF') NOT NULL,
+  `active` int(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `rr` (`zone`,`name`,`type`,`data`,`aux`,`active`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+  KEY `zone` (`zone`),
+  KEY `name` (`name`),
+  KEY `type` (`type`)
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 -- Veri çıktısı seçilmemişti
 -- tablo yapısı dökülüyor adns.soa
@@ -56,9 +59,11 @@ CREATE TABLE IF NOT EXISTS `soa` (
   `expire` int(10) unsigned NOT NULL DEFAULT '604800',
   `minimum` int(10) unsigned NOT NULL DEFAULT '86400',
   `ttl` int(10) unsigned NOT NULL DEFAULT '86400',
-  `active` int(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+  `active` int(1) unsigned NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `origin` (`origin`)
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 -- Veri çıktısı seçilmemişti
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
