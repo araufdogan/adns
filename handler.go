@@ -81,6 +81,8 @@ func (h *DNSHandler) Do(Net string, w dns.ResponseWriter, req *dns.Msg) {
 		break
 	case dns.TypeCNAME:
 		HandleCname(h, Q, q, w, req)
+	case dns.TypeMX:
+		HandleMx(h, Q, q, w, req)
 	default:
 		break
 	}
@@ -292,6 +294,42 @@ func HandleCname(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter
 		cname := &dns.CNAME{Hdr: rr_header, Target: rr.Data}
 
 		m.Answer = append(m.Answer, cname)
+	}
+
+	// write the reply
+	w.WriteMsg(m)
+	return
+}
+
+func HandleMx(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, req *dns.Msg) {
+	// parse publicsuffix
+
+	domain_name, err := publicsuffix.Parse(Q.Qname)
+	if err != nil {
+		return
+	}
+
+	// find sld + tld record in soa
+	err, soa := DBGetSoaByOrigin(h.db, domain_name.SLD + "." + domain_name.TLD)
+	if err != nil || soa.Active == 0 {
+		return
+	}
+
+	// find mx record in rr
+	err, rr_array := DBGetRrByZoneName(h.db, "MX", soa.Id, domain_name.TRD)
+	if err != nil || len(rr_array) == 0 {
+		return
+	}
+
+	// build the reply
+	m := new(dns.Msg)
+	m.SetReply(req)
+
+	for _, rr := range rr_array {
+		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeMX, Class: dns.ClassINET, Ttl: rr.Ttl}
+		mx := &dns.MX{Hdr: rr_header, Mx: rr.Data, Preference: uint16(rr.Aux)}
+
+		m.Answer = append(m.Answer, mx)
 	}
 
 	// write the reply
