@@ -148,10 +148,10 @@ func HandleAAAA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter,
 		m := new(dns.Msg)
 		m.SetReply(req)
 
-		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ns.Ttl}
-		a := &dns.A{Hdr: rr_header, A: net.ParseIP(ns.DataV6)}
+		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: ns.Ttl}
+		aaaa := &dns.AAAA{Hdr: rr_header, AAAA: net.ParseIP(ns.DataV6)}
 
-		m.Answer = append(m.Answer, a)
+		m.Answer = append(m.Answer, aaaa)
 
 		// write the reply
 		w.WriteMsg(m)
@@ -184,9 +184,9 @@ func HandleAAAA(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter,
 
 	for _, rr := range rr_array {
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: rr.Ttl}
-		a := &dns.AAAA{Hdr: rr_header, AAAA: net.ParseIP(rr.Data)}
+		aaaa := &dns.AAAA{Hdr: rr_header, AAAA: net.ParseIP(rr.Data)}
 
-		m.Answer = append(m.Answer, a)
+		m.Answer = append(m.Answer, aaaa)
 	}
 
 	// write the reply
@@ -213,16 +213,16 @@ func HandleNs(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, r
 	m.SetReply(req)
 
 	rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: soa.Ttl}
-	a := &dns.NS{Hdr: rr_header, Ns: ns1.Name + "."}
+	ns := &dns.NS{Hdr: rr_header, Ns: ns1.Name + "."}
 
-	m.Answer = append(m.Answer, a)
+	m.Answer = append(m.Answer, ns)
 
 	err, ns2 := DBGetNsById(h.db, soa.Ns2)
 	if err == nil {
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: soa.Ttl}
-		a := &dns.NS{Hdr: rr_header, Ns: ns2.Name + "."}
+		ns := &dns.NS{Hdr: rr_header, Ns: ns2.Name + "."}
 
-		m.Answer = append(m.Answer, a)
+		m.Answer = append(m.Answer, ns)
 	}
 
 	// write the reply
@@ -289,9 +289,9 @@ func HandleCname(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter
 
 	for _, rr := range rr_array {
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeCNAME, Class: dns.ClassINET, Ttl: rr.Ttl}
-		a := &dns.CNAME{Hdr: rr_header, Target: rr.Data}
+		cname := &dns.CNAME{Hdr: rr_header, Target: rr.Data}
 
-		m.Answer = append(m.Answer, a)
+		m.Answer = append(m.Answer, cname)
 	}
 
 	// write the reply
