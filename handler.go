@@ -39,9 +39,10 @@ type DNSHandler struct {
 // NewHandler returns a new DNSHandler
 func NewHandler(db *sql.DB) *DNSHandler {
 	cache := &MemoryCache{
-		Storage:  make(map[string]Message, 9999),
-		MaxCount: 9999,
+		Storage:  make(map[string]Message, config.CacheLimit),
+		MaxCount: config.CacheLimit,
 	}
+	cache.Start()
 
 	return &DNSHandler{db: db, cache: cache}
 }

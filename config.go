@@ -23,6 +23,7 @@ type Config struct {
 	DnsBind			string
 	ApiBind			string
 	MysqlConnectionString	string
+	CacheLimit		int
 }
 
 var defaultConfig = `# version this config was generated from
@@ -42,6 +43,9 @@ apibind = "127.0.0.1:8080"
 
 # mysql server connection string
 mysqlconnectionstring = "root:123456@tcp(127.0.0.1:3306)/adns?charset=utf8mb4"
+
+# memory cache limit
+cachelimit = 999
 `
 
 // Config is the global configuration

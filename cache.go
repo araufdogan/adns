@@ -16,9 +16,10 @@ type Cache interface {
 
 // MemoryCache type
 type MemoryCache struct {
-	Storage  map[string]Message
-	MaxCount int
-	Mu       sync.RWMutex
+	Storage		map[string]Message
+	MaxCount	int
+	Mu		sync.RWMutex
+	Timer		*time.Ticker
 }
 
 // Mesg represents a cache entry
@@ -66,6 +67,24 @@ func (c *MemoryCache) Delete(q string) error {
 	return nil
 }
 
+func (c *MemoryCache) Start() {
+	c.Timer = time.NewTicker(10 * time.Second)
+	go func() {
+		for range c.Timer.C {
+			t := time.Now()
+
+			c.Mu.Lock()
+
+			for k, v := range c.Storage {
+				if v.Expire.After(t) {
+					c.Delete(k)
+				}
+			}
+
+			c.Mu.Unlock()
+		}
+	}()
+}
 
 
 
