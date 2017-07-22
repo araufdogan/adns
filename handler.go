@@ -7,6 +7,7 @@ import (
 	"strings"
 	"net"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
+	"strconv"
 )
 
 // Question type
@@ -331,8 +332,18 @@ func HandleMx(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, r
 	m.SetReply(req)
 
 	for _, rr := range rr_array {
+		split_data := strings.Split(rr.Data, " ")
+		if len(split_data) != 2 {
+			continue
+		}
+
+		priority, err := strconv.ParseInt(split_data[0], 10, 64)
+		if err != nil {
+			continue
+		}
+
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeMX, Class: dns.ClassINET, Ttl: rr.Ttl}
-		mx := &dns.MX{Hdr: rr_header, Mx: rr.Data, Preference: uint16(rr.Aux)}
+		mx := &dns.MX{Hdr: rr_header, Mx: split_data[1] + ".", Preference: uint16(priority)}
 
 		m.Answer = append(m.Answer, mx)
 	}
@@ -361,19 +372,20 @@ func HandleSrv(h *DNSHandler, Q Question, q dns.Question, w dns.ResponseWriter, 
 	if err != nil || len(rr_array) == 0 {
 		return
 	}
-
+	/*
 	// build the reply
 	m := new(dns.Msg)
 	m.SetReply(req)
 
 	for _, rr := range rr_array {
 		rr_header := dns.RR_Header{Name: q.Name, Rrtype: dns.TypeSRV, Class: dns.ClassINET, Ttl: rr.Ttl}
-		srv := &dns.SRV{Hdr: rr_header, Target: rr.Data, Priority: uint16(rr.Aux)}
+		srv := &dns.SRV{Hdr: rr_header, Targ}
 
 		m.Answer = append(m.Answer, srv)
 	}
 
 	// write the reply
 	w.WriteMsg(m)
+	*/
 	return
 }
