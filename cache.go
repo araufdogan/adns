@@ -76,7 +76,7 @@ func (c *MemoryCache) Start() {
 			c.Mu.Lock()
 
 			for k, v := range c.Storage {
-				if v.Expire.After(t) {
+				if v.Expire.Before(t) {
 					c.Delete(k)
 				}
 			}
